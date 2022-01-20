@@ -3,6 +3,7 @@ title: Package exports
 sort: 25
 contributors:
   - sokra
+  - Sidnioulz
 related:
   - title: Package entry points in Node.js
     url: https://nodejs.org/api/packages.html#packages_package_entry_points
@@ -73,7 +74,7 @@ Instead of providing results directly in the `exports` field,
 the package author may let the module system choose one based on conditions about the environment.
 
 In this case an object mapping conditions to results should be used.
-Conditions are tried in object order.
+Conditions are tried in the order they are declared.
 Conditions that contain invalid results are skipped.
 Conditions might be nested to create a logical AND.
 The last condition in the object might be the special `"default"` condition,
@@ -111,6 +112,50 @@ throw new ModuleNotFoundError();
 ```
 
 The available conditions vary depending on the module system and tool used.
+
+## Combining sub paths and conditional syntax
+
+If you need to export multiple sub paths based on a condition, the `exports` field must use sub paths as top-level properties, and conditions inside each sub path. If the `exports` field uses conditions as top-level properties, `enhanced-resolve` will not be able to recognise sub paths further down in the object. In other words, only conditions may be nested inside a condition.
+
+The following example is a valid way to combine sub paths and conditions, recognised by Node.js and webpack:
+```json
+{
+  "exports": {
+    "./sub/path": {
+      "development": "./src/directory/",
+      "default": "./build/directory/"
+    },
+    "./other/path": {
+      "browser": "./build/other-directory-with-polyfills/",
+      "default": "./build/other-directory/"
+    },
+    ".": "./build/"
+  }
+}
+```
+
+The following example is NOT valid and will fail to work in webpack or Node.js:
+```json
+{
+  "exports": {
+    "development": {
+      "./sub/path": "./src/directory/",
+      "./other/path": "./build/other-directory/",
+      ".": "./build/"
+    },
+    "browser": {
+      "./sub/path": "./build/directory/",
+      "./other/path": "./build/other-directory-with-polyfills/",
+      ".": "./build/"
+    },
+    "default": {
+      "./sub/path": "./build/directory/",
+      "./other/path": "./build/other-directory/",
+      ".": "./build/"
+    }
+  }
+}
+```
 
 ## Abbreviation
 
